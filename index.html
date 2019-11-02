@@ -378,8 +378,7 @@
                         if (distX > (40/2 + coin.r)) {}
                         if (distY > ((40/2-40) + coin.r)) {}
 
-                        if (distX <= (40/2) && distY <= (40/2) || dx*dx+dy*dy<=(coin.r*coin.r)) { moveCoin();} 
-                        console.log("redBlocks.length : " + redBlocks.length);
+                        if (distX <= (40/2) && distY <= (40/2) || dx*dx+dy*dy<=(coin.r*coin.r)) { moveCoin();}
                         ctx.restore();
                     };
                     
@@ -499,31 +498,47 @@
             //Handling Mouse controls
             canvas.addEventListener("mousedown", function() {
                 mouseIsDown = true;
+                if(scene === "play") {
+                    player.x = event.clientX;
+                    player.y = event.clientY;
+                }
             });
             canvas.addEventListener("mouseup", function() {
                 mouseIsDown = false;
             });
             canvas.addEventListener("mousemove", function(event) {
-                if(mouseIsDown) {
+                if(mouseIsDown && scene === "play") {
                     player.x = event.clientX;
                     player.y = event.clientY - 20;
                 };
             });
             
+            var touches = null;
             //Handling Touch Events(experimental)
             canvas.addEventListener("touchstart", function(event) {
+                touches = event.changedTouches;
                 if (scene === "play") {
-                    player.x = event.changedTouches[0].clientX;
-                    player.y = event.changedTouches[0].clientY - 20;
+                    if(player.x > 20 && player.x < width && player.y > 0 && player.y < height - 20) {
+                        player.x = touches[0].clientX;
+                        player.y = touches[0].clientY - 20;
+                    } else if(touches[0].clientX >= 20 && touches[0].clientX < width && touches[0].clientY > 0 && touches[0].clientY < height - 20) {
+                        player.x = touches[0].clientX;
+                        player.y = touches[0].clientY - 20;
+                    };
                     
                     event.preventDefault();
                 };
             });
             canvas.addEventListener("touchmove", function(event) {
+                touches = event.changedTouches;
                 if (scene === "play") {
-                    if(player.x > 40 && player.x < width && player.y > 0 && player.y < height - 40) {
-                        player.x = event.changedTouches[0].clientX;
-                        player.y = event.changedTouches[0].clientY - 20;
+                    
+                    if(player.x > 20 && player.x < width && player.y > 0 && player.y < height - 20) {
+                        player.x = touches[0].clientX;
+                        player.y = touches[0].clientY - 20;
+                    } else if(touches[0].clientX >= 20 && touches[0].clientX < width && touches[0].clientY > 0 && touches[0].clientY < height - 20) {
+                        player.x = touches[0].clientX;
+                        player.y = touches[0].clientY - 20;
                     };
                     event.preventDefault();
                 };
@@ -671,3 +686,4 @@
         </script>
     </body>
 </html>
+
