@@ -230,14 +230,14 @@
             
             var levels = [
                 new MakeLevel(1, 0.5, 0.5, 5),
-                new MakeLevel(2, 1, 1, 20),
-                new MakeLevel(3, 2, 2, 50),
-                new MakeLevel(4, 3, 3, 100),
-                new MakeLevel(5, 4, 4, 150),
-                new MakeLevel(6, 5, 5, 250),
-                new MakeLevel(7, 5, 5, 250),
-                new MakeLevel(8, 5, 5, 250),
-                new MakeLevel(9, 5, 5, 250),
+                new MakeLevel(2, 1, 1, 15),
+                new MakeLevel(3, 1.25, 1.25, 30),
+                new MakeLevel(4, 1.5, 1.5, 50),
+                new MakeLevel(5, 2, 2, 60),
+                new MakeLevel(6, 2.5, 2.5, 90),
+                new MakeLevel(7, 3, 3, 120),
+                new MakeLevel(8, 4, 4, 160),
+                new MakeLevel(9, 5, 5, 200),
             ];
             
         
@@ -267,10 +267,12 @@
                 redBlockXMoveRate.max = levels[level - 1].maxBlockSpeed * 5;
                 redBlockYMoveRate.min = -(levels[level - 1].maxBlockSpeed * 5);
                 redBlockYMoveRate.max = levels[level - 1].maxBlockSpeed * 5;
-                numberOfBlocks = levels[level - 1].nBlocks;
+                console.log(Math.round(initialNumberOfBlocks * levels[level - 1].nBlocks));
+                numberOfBlocks = Math.round(initialNumberOfBlocks * levels[level - 1].nBlocks);
                 player.x = width/2;
                 player.y = height - 40;
                 
+                redBlocks = [];
                 for(var i = 0; i < numberOfBlocks; i++) {
                     redBlocks.push(new Vector(width/2, height/2, rangedRandom(redBlockXMoveRate.min, redBlockXMoveRate.max), rangedRandom(redBlockYMoveRate.min, redBlockYMoveRate.max)));
                 };
@@ -435,7 +437,12 @@
                     ctx.save();
                     ctx.translate(0, -150);
                     ctx.fillText("Congratulations!", width/2, height/2);
-                    ctx.fillText("You got " + score + " points!", width/2, height/2 + (fontSize * 1.25));
+                    if(score === 1){
+                        ctx.fillText("You got " + score + " point!", width/2, height/2 + (fontSize * 1.25));
+                    } else {
+                        ctx.fillText("You got " + score + " points!", width/2, height/2 + (fontSize * 1.25));
+                    };
+                    
                     if(level === 0) {
                         ctx.fillText("Click the retry button to play again.", width/2, height/2+fontSize*2.5);
                     } else {
@@ -451,7 +458,7 @@
                     ctx.restore();
                     retryButton.draw();
                     backButtonFromLoseScreen.draw();
-                    if(level != 0) {
+                    if(level != 0 && level < 9) {
                         nextButton.draw();
                     };
                     ctx.restore();
@@ -597,7 +604,7 @@
                             };
                     
                             scene = "menu";
-                        } else if(nextButton.mouseIsInside(event) && level != 0) {
+                        } else if(nextButton.mouseIsInside(event) && level != 0 && level < 9) {
                             changeLevel(level + 1);
                         }
                     } else if (scene === "gameControls") {
@@ -686,4 +693,3 @@
         </script>
     </body>
 </html>
-
