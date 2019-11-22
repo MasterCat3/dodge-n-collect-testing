@@ -5,7 +5,7 @@
 
 <!--
     Released on: April 30th 2017
-    Last Updated: November 17th 2019
+    Last Updated: September 25th 2019
     Improvements made since release: (
         Made logo shorter
         Made the x position of the player reset itself after the "Retry" button is pressed
@@ -39,7 +39,6 @@
     <body>
         <canvas id="canvas" width="550" height="550"></canvas>
         <script>
-         
             
             // Setting Up Canvas with Javascript
             {
@@ -281,10 +280,17 @@
                 scene = "play";
             };
             
+            var backgroundImage = new Image();
+            backgroundImage.src = "StarsExperimentWithPlanet.png";
+            
+            var backgroundImageWithoutPlanet = new Image();
+            backgroundImageWithoutPlanet.src = "StarsExperiment.png";
+            
             // Scenes
             var logoProgress = 0;
             var scenes = {
                 logo: function() {
+                    
                     ctx.save();
                     setBackgroundColor(0, 0, 0);
                     ctx.font = "40px serif";
@@ -299,7 +305,12 @@
                     ctx.restore();
                 },
                 menu: function() {
-                    setBackgroundColor(color(255, 69, 69));
+                    setBackgroundColor(color(102, 0, 255));
+                    try {
+                        ctx.drawImage(backgroundImage, 0, 0, width, height);
+                    } catch(err) {
+                        console.log(err.message);
+                    };
                     ctx.save();
                     ctx.fillStyle = "black";
                     ctx.textAlign = "center";
@@ -325,6 +336,12 @@
                     } else {
                         setBackgroundColor(color(255, 255, 255));
                     };
+                    try {
+                       ctx.drawImage(backgroundImageWithoutPlanet, 0, 0, width, height);
+                    } catch(err) {
+                        console.log(err.message);
+                    };
+                    
                     coin.draw();
                     ctx.textAlign = "center";
                     ctx.fillStyle = "white";
@@ -412,12 +429,18 @@
                 },
                 how: function() {
                     ctx.save();
-                    setBackgroundColor(color(255, 69, 69));
+                    setBackgroundColor(color(0, 0, 0));
+                    try {
+                       ctx.drawImage(backgroundImageWithoutPlanet, 0, 0, width, height);
+                    } catch(err) {
+                        console.log(err.message);
+                    };
+                    
                     ctx.textAlign = "center";
                     var fontSize = canvas.width / 100 * 4;
                     if(fontSize >= 50) {fontSize = 50};
                     ctx.font = fontSize + "px sans-serif";
-                    ctx.fillStyle = "black";
+                    ctx.fillStyle = "white";
                     ctx.fillText("You are the blue block. Move", width/2, height/2 - (fontSize * 2.5));
                     ctx.fillText("around with the arrow keys", width/2, height/2 - (fontSize * 1.25));
                     ctx.fillText("or drag your mouse or finger", width/2, height/2);
@@ -428,9 +451,14 @@
                     ctx.restore();
                 },
                 lose: function() {
-                    ctx.save();
                     ctx.textAlign = "center";
                     setBackgroundColor(color(255, 69, 69));
+                    try {
+                       ctx.drawImage(backgroundImageWithoutPlanet, 0, 0, width, height);
+                    } catch(err) {
+                        console.log(err.message);
+                    };
+                    ctx.save();
                     var fontSize = canvas.width / 100 * 4;
                     if(fontSize >= 50) {fontSize = 50};
                     ctx.font = fontSize + "px sans-serif";
@@ -486,7 +514,13 @@
                     
                 },
                 levels: function() {
-                    setBackgroundColor(color(255, 69, 69));
+                    setBackgroundColor(color(0, 0, 0));
+                    try {
+                       ctx.drawImage(backgroundImageWithoutPlanet, 0, 0, width, height);
+                    } catch(err) {
+                        console.log(err.message);
+                    };
+                    
                     for(i = 0; i < levelButtons.length; i++) {
                         levelButtons[i].draw();
                     };
@@ -693,3 +727,4 @@
         </script>
     </body>
 </html>
+
