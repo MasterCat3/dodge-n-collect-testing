@@ -462,6 +462,7 @@
                     var fontSize = canvas.width / 100 * 4;
                     if(fontSize >= 50) {fontSize = 50};
                     ctx.font = fontSize + "px sans-serif";
+                    ctx.fillStyle = "white";
                     ctx.save();
                     ctx.translate(0, -150);
                     ctx.fillText("Congratulations!", width/2, height/2);
