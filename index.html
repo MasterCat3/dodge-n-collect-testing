@@ -4,13 +4,19 @@
 
 
 <!--
-    Released in: September 2019
-    Last Updated: January 21st 2020
+    Released on: April 30th 2017
+    Last Updated: May 6th, 2020
     Improvements made since release: (
-        New Space Theme
-        New Levels
-        Nicer Buttons With Rounded Corners
+        Made logo shorter
+        Made the x position of the player reset itself after the "Retry" button is pressed
+        Made "how" text more clear
+        Added a gameSpeed variable to make it easier to adjust the game speed
+        Added a scores page
+        Fixed button collisions
+        Added variable to control how many red blocks there can be
+        Added new game controls section
     )
+    Reason I made this: I had just designed an HTML menu similar to this that I liked, And I felt like making a game, And a dodge game didn't seem too hard.
     
     Tested in Firefox, Safari, and Chrome
 -->
@@ -240,6 +246,7 @@
             ];
             
             var changeLevel = function(newLevel) {
+                seconds = 0;
                 level = newLevel;
                 redBlockXMoveRate.min = -(levels[level - 1].maxBlockSpeed * 5);
                 redBlockXMoveRate.max = levels[level - 1].maxBlockSpeed * 5;
@@ -257,6 +264,27 @@
                 
                 score = 0;
                 scene = "play";
+            };
+            
+            
+            
+            var levelsCompleted = [];
+            var tempLevelsCompleted = localStorage.getItem("levelsCompleted");
+            if(tempLevelsCompleted === null || tempLevelsCompleted === undefined) {
+                for(i = 0; i < 9; i++) {
+                    levelsCompleted.push(false);
+                };
+                localStorage.setItem("levelsCompleted", levelsCompleted.toString());
+                
+            } else {
+                levelsCompleted = tempLevelsCompleted.split(",");
+                for(i = 0; i < levelsCompleted.length; i++) {
+                    if(levelsCompleted[i] === "true") {
+                        levelsCompleted[i] = true;
+                    } else if(levelsCompleted[i] === "false") {
+                        levelsCompleted[i] = false;
+                    };
+                };
             };
             
             var scene = "logo";
@@ -288,8 +316,11 @@
             var backgroundImageWithoutPlanet = new Image();
             backgroundImageWithoutPlanet.src = "StarsExperiment.png";
             
+            var checkmarkIcon = new Image();
+            checkmarkIcon.src = "Checkmarkicon.png";
             // Scenes
             var logoProgress = 0;
+            var seconds = 0;
             var scenes = {
                 logo: function() {
                     
@@ -332,6 +363,10 @@
                     ctx.restore();
                 },
                 play: function() {
+                    if (new Date().getTime() - now >= 1000) {
+                        seconds += 1;
+                        now = new Date().getTime();
+                    }
                     ctx.save();
                     if(darkMode === true) {
                         setBackgroundColor(color(0, 0, 0));
@@ -351,9 +386,9 @@
                     if(textSize > 30) {textSize = 30};
                     ctx.font = textSize + "px sans-serif";
                     if(level === 0) {
-                        ctx.fillText(Math.round(score), width/2, 1.5 * textSize);
+                        ctx.fillText("Score: " + Math.round(score) + "     Seconds: " + seconds, width/2, 1.5 * textSize);
                     } else {
-                        ctx.fillText(Math.round(score) + " / " + levels[level - 1].coinGoal, width/2, 1.5 * textSize);
+                        ctx.fillText("Score: " + Math.round(score) + " / " + levels[level - 1].coinGoal + "     Seconds: " + seconds, width/2, 1.5 * textSize);
                     }
                     ctx.fillStyle = "black";
                     ctx.save();
@@ -469,9 +504,9 @@
                     ctx.translate(0, -150);
                     ctx.fillText("Congratulations!", width/2, height/2);
                     if(score === 1){
-                        ctx.fillText("You got " + score + " point!", width/2, height/2 + (fontSize * 1.25));
+                        ctx.fillText("You got " + score + " point in " + seconds + " seconds!", width/2, height/2 + (fontSize * 1.25));
                     } else {
-                        ctx.fillText("You got " + score + " points!", width/2, height/2 + (fontSize * 1.25));
+                        ctx.fillText("You got " + score + " points in " + seconds + " seconds!", width/2, height/2 + (fontSize * 1.25));
                     };
                     
                     if(level === 0) {
@@ -480,6 +515,9 @@
                         if(score >= levels[level - 1].coinGoal) {
                             ctx.fillText("You passed level " + level + "!", width/2, height/2+fontSize*2.5);
                             ctx.fillText("Click the retry button to play again.", width/2, height/2+fontSize*3.75);
+                            levelsCompleted[level - 1] = true;
+                            localStorage.setItem("levelsCompleted", levelsCompleted.toString());
+                            console.log(localStorage.getItem("levelsCompleted"))
                         } else {
                             ctx.fillText("You failed level " + level + ".", width/2, height/2+fontSize*2.5);
                             ctx.fillText("Click the retry button to play again.", width/2, height/2+fontSize*3.75);
@@ -495,6 +533,7 @@
                     ctx.restore();
                     if(keysPressed[82]) {
                         score = 0;
+                        seconds = 0;
                         player.x = width/2;
                         player.y = height - 40;
                         for(var i = 0; i < redBlocks.length; i++) {
@@ -527,6 +566,12 @@
                     for(i = 0; i < levelButtons.length; i++) {
                         levelButtons[i].draw();
                     };
+                    
+                    for(i = 0; i < levelsCompleted.length; i++) {
+                        if(levelsCompleted[i] === true) {
+                            ctx.drawImage(checkmarkIcon, levelButtons[i].x - 10, levelButtons[i].y - 5, 20, 20);
+                        }
+                    }
                     backButton.draw();
                 },
             };
@@ -596,6 +641,7 @@
                             scene = "play";
                             player.x = width/2;
                             player.y = height - 40;
+                            seconds = 0;
                             score = 0;
                             numberOfBlocks = initialNumberOfBlocks;
                             
@@ -613,6 +659,7 @@
                     } else if(scene === "lose") {
                         if(retryButton.mouseIsInside(event)) {
                             score = 0;
+                            seconds = 0;
                             player.x = width/2;
                             player.y = height - 40;
                             for(var i = 0; i < redBlocks.length; i++) {
@@ -624,6 +671,7 @@
                             scene = "play";
                         } else if(backButtonFromLoseScreen.mouseIsInside(event)) {
                             score = 0;
+                            seconds = 0;
                             if(level != 0) {
                                 gameSpeed = 5;
                                 level = 0;
