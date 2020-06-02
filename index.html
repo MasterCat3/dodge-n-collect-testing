@@ -10,13 +10,13 @@
         Made logo shorter
         Made the x position of the player reset itself after the "Retry" button is pressed
         Made "how" text more clear
+        Added a gameSpeed variable to make it easier to adjust the game speed
+        Added a scores page
         Fixed button collisions
         Added variable to control how many red blocks there can be
         Added new game controls section
-        Added seconds count
-        Added feature to keep track of level progress offline
     )
-    Reason I made this: I had just designed a Dodge Game similar to this that I liked, And I felt like making a game, And a dodge game didn't seem too hard.
+    Reason I made this: I had just designed an HTML menu similar to this that I liked, And I felt like making a game, And a dodge game didn't seem too hard.
     
     Tested in Firefox, Safari, and Chrome
 -->
@@ -37,11 +37,28 @@
     </head>
     
     <body>
+        <audio loop id="mainTheme" src="mainTheme.mp3">
+        </audio>
+        <audio id="ding" src="ding.mp3">
+        </audio>
+        
         <canvas id="canvas" width="550" height="550"></canvas>
         <script>
-            
+            var soundsOn = false;
+            var musicOn = false;
+            function startMainTheme() {
+                if(musicOn === true) {
+                    document.getElementById("mainTheme").play();
+                }
+            };
+            function stopMainTheme() {
+                if(musicOn === true) {
+                    document.getElementById("mainTheme").load();
+                }
+            }
             // Setting Up Canvas with Javascript
             {
+                
                 var canvas = document.getElementById("canvas");
                 canvas.height = window.innerHeight;
                 canvas.width = window.innerWidth;
@@ -131,7 +148,7 @@
                     ctx.textAlign = "center";
                     ctx.fillStyle = this.color;
                     ctx.roundRect(this.x-this.width+(this.txt.length*5), this.y-this.height, this.width, this.height, 5).fill();
-                    ctx.font = "20px sans-serif";
+                    ctx.font = "20px cursive";
                     ctx.fillStyle = this.txtcolor;
                     ctx.fillText(this.txt, this.x-(this.width/2)+(this.txt.length*5), this.y-(this.height/2));
                     ctx.restore();
@@ -148,34 +165,24 @@
                 return new Button(x, y, number, "blue", "orange", 35, 35);
             };
             
-            //Function to interpret and use user input for game speed
-            var setGameSpeed = function() {
-                var returnValue = parseInt(prompt("Please enter a number between 3 and 25 to set the speed of the game (The default is 6) ", 6));
-                  if (returnValue < 3 || returnValue > 25) {
-                    alert("Your number is outside the specified range of 3 to 25. Please try again.");
-                } else if (returnValue >= 3 && returnValue <= 25) {
-                    gameSpeed = returnValue;
-                    alert("Game speed set.");
-                } else {
-                    alert("Invalid input. Please try again.");
-                };
-            };
             
             // Code to detect if the mouse is down or up
             var mouseIsDown = false;
 
             
             
-            var playButton = new Button(width/2, height/2 - 110, "  Play  ", "blue", "orange");
+            var playButton = new Button(width/2, height/2 - 110, "  Play  ", color(0, 0, 255), "orange");
             var howButton = new Button(width/2, height/2 + 90, "   How  ", "blue", "orange");
             var levelsButton = new Button(width/2, height/2 - 10, "  Levels  ", "blue", "orange");
-            var gameControlsButton = new Button(width/2, height/2 + 90 , " Game Controls ", "blue", "orange");
+            var gameControlsButton = new Button(width/2, height/2 + 190 , " Game Controls ", "blue", "orange");
             var backButton = new Button(60, height-50, "  Back  ", "blue", "orange");
             var retryButton = new Button(60, height-125, "  Retry  ", "blue", "orange");
             var backButtonFromLoseScreen = new Button(60, height-50, "  Back  ", "blue", "orange");
             var nextButton = new Button(60, height - 200, "  Next  ", "blue", "orange");
             var gameSpeedButton = new Button(width/2, height/2, "  Game Speed  ", "blue", "orange");
             var numberOfBlocksButton = new Button(width/2, height/2 + 100, "  Number Of Blocks  ", "blue", "orange");
+            var soundsButton = new Button(width/2, height/2 - 100, "  Sounds : Off  ", "blue", "orange");
+            var musicButton = new Button(width/2, height/2, "  Music : Off  ", "blue", "orange");
             
             
             
@@ -197,6 +204,9 @@
                 score += 1;
                 coin.x = rangedRandom(20, width - 20);
                 coin.y = rangedRandom(40, height - 20);
+                if(soundsOn === true) {
+                    document.getElementById("ding").play();
+                };
             };
             
             
@@ -308,7 +318,8 @@
         
             
             
-            
+            var dodgencollecticon = new Image();
+            dodgencollecticon.src = "dodgencollecticon.png"
             
             var backgroundImage = new Image();
             backgroundImage.src = "StarsExperimentWithPlanet.png";
@@ -345,7 +356,7 @@
                         console.log(err.message);
                     };
                     ctx.save();
-                    ctx.fillStyle = "black";
+                    ctx.fillStyle = "white";
                     ctx.textAlign = "center";
                     if(width < 320 || height < 447) {
                         ctx.font = "15px cursive";
@@ -354,11 +365,12 @@
                         ctx.font = "30px cursive";
                         var titleTextX = 50;
                     };
+                    ctx.drawImage(dodgencollecticon, width/2 - 150, titleTextX - titleTextX/2, 50, 50);
                     ctx.fillText("Dodge 'n Collect", width/2, titleTextX);
                     ctx.save();
                     playButton.draw();
                     howButton.draw();
-                    //gameControlsButton.draw();
+                    gameControlsButton.draw();
                     levelsButton.draw();
                     ctx.restore();
                 },
@@ -384,7 +396,7 @@
                     ctx.fillStyle = "white";
                     var textSize = canvas.width / 100 * 4;
                     if(textSize > 30) {textSize = 30};
-                    ctx.font = textSize + "px sans-serif";
+                    ctx.font = textSize + "px cursive";
                     if(level === 0) {
                         ctx.fillText("Score: " + Math.round(score) + "     Seconds: " + seconds, width/2, 1.5 * textSize);
                     } else {
@@ -415,12 +427,14 @@
                         if(level != 0) {
                             if(score === levels[level - 1].coinGoal) {
                                 scene = "lose";
+                                stopMainTheme();
                             };
                         };
                         
         
                         if(redBlocks[i].x >= player.x-40 && redBlocks[i].x <= player.x+40 && redBlocks[i].y >= player.y && redBlocks[i].y <= player.y + 80) {
                             scene = "lose";
+                            stopMainTheme();
                         };
                         
                         ctx.fillRect(redBlocks[i].x-40, redBlocks[i].y-40, 40, 40);
@@ -548,10 +562,15 @@
                 gameControls: function() {
                     ctx.fillStyle = "blue"; ctx.font = "30px sans-serif"; ctx.fillText(numberOfBlocks, 100, 100);
                     ctx.save();
-                    setBackgroundColor(color(255, 69, 69));
-                    gameSpeedButton.draw();
-                    numberOfBlocksButton.draw();
+                    setBackgroundColor(color(0,0,0));
+                    try {
+                        ctx.drawImage(backgroundImage, 0, 0, width, height);
+                    } catch(err) {
+                        console.log(err.message);
+                    };
                     backButton.draw();
+                    soundsButton.draw();
+                    musicButton.draw();
                     ctx.restore();
                     
                 },
@@ -585,12 +604,12 @@
 
             
             //Handling Mouse controls
-            canvas.addEventListener("mousedown", function() {
+            canvas.addEventListener("mousedown", function(event) {
                 mouseIsDown = true;
                 if(scene === "play") {
                     player.x = event.clientX;
                     player.y = event.clientY;
-                }
+                };
             });
             canvas.addEventListener("mouseup", function() {
                 mouseIsDown = false;
@@ -599,6 +618,68 @@
                 if(mouseIsDown && scene === "play") {
                     player.x = event.clientX;
                     player.y = event.clientY - 20;
+                };
+                if(scene === "menu") {
+                    if(playButton.mouseIsInside(event)) {
+                        playButton.color = color(0, 120, 255);
+                    } else if(!playButton.mouseIsInside(event)) {
+                        playButton.color = color(0, 0, 255)
+                    };
+                    if (levelsButton.mouseIsInside(event)) {
+                        levelsButton.color = color(0, 120, 255);
+                    } else if (!levelsButton.mouseIsInside(event)) {
+                        levelsButton.color = color(0, 0, 255);
+                    };
+                    if(howButton.mouseIsInside(event)) {
+                        howButton.color = color(0, 120, 255);
+                    } else if(!howButton.mouseIsInside(event)) {
+                        howButton.color = color(0, 0, 255);
+                    }; 
+                    if(gameControlsButton.mouseIsInside(event)) {
+                        gameControlsButton.color = color(0, 120, 255);
+                    } else if(!gameControlsButton.mouseIsInside(event)) {
+                        gameControlsButton.color = color(0, 0, 255);
+                    };
+                };
+                if(scene === "gameControls" || scene === "how" || scene === "levels") {
+                    if(backButton.mouseIsInside(event)) {
+                        backButton.color = color(0, 120, 255);
+                    } else if(!backButton.mouseIsInside(event)) {
+                        backButton.color = color(0, 0, 255);
+                    };
+                };
+                if(scene === "lose") {
+                    if(retryButton.mouseIsInside(event)) {
+                        retryButton.color = color(0, 120, 255)
+                    } else if(!retryButton.mouseIsInside(event)) {
+                        retryButton.color = color(0, 0, 255);
+                    };
+                    if(backButtonFromLoseScreen.mouseIsInside(event)) {
+                        backButtonFromLoseScreen.color = color(0, 120, 255);
+                    } else if(!backButtonFromLoseScreen.mouseIsInside(event)) {
+                        backButtonFromLoseScreen.color = color(0, 0, 255);
+                    };
+                };
+                if(scene === "levels") {
+                    for(i = 0; i < levelButtons.length; i++) {
+                        if(levelButtons[i].mouseIsInside(event)) {
+                            levelButtons[i].color = color(0, 120, 255);
+                        } else if(!levelButtons[i].mouseIsInside(event)) {
+                            levelButtons[i].color = color(0, 0, 255);
+                        };
+                    }
+                }
+                if(scene === "gameControls") {
+                    if(soundsButton.mouseIsInside(event)) {
+                        soundsButton.color = color(0, 120, 255);
+                    } else if(!soundsButton.mouseIsInside(event)) {
+                        soundsButton.color = color(0, 0, 255);
+                    };
+                    if(musicButton.mouseIsInside(event)) {
+                        musicButton.color = color(0, 120, 255);
+                    } else if(!musicButton.mouseIsInside(event)) {
+                        musicButton.color = color(0, 0, 255);
+                    };
                 };
             });
             
@@ -639,6 +720,7 @@
                     if(scene === "menu") {
                         if(playButton.mouseIsInside(event)) {
                             scene = "play";
+                            startMainTheme();
                             player.x = width/2;
                             player.y = height - 40;
                             seconds = 0;
@@ -648,7 +730,7 @@
                         } else if(howButton.mouseIsInside(event)) {
                             scene = "how";
                         } else if(gameControlsButton.mouseIsInside(event)) {
-                            
+                            scene = "gameControls";
                         } else if(levelsButton.mouseIsInside(event)) {
                             scene = "levels";
                         };
@@ -669,6 +751,7 @@
                                 redBlocks[i].yMoveRate = rangedRandom(redBlockYMoveRate.min, redBlockYMoveRate.max);
                             };
                             scene = "play";
+                            startMainTheme();
                         } else if(backButtonFromLoseScreen.mouseIsInside(event)) {
                             score = 0;
                             seconds = 0;
@@ -695,11 +778,23 @@
                     } else if (scene === "gameControls") {
                         if(backButton.mouseIsInside(event)) {
                             scene = "menu";
-                        } else if (gameSpeedButton.mouseIsInside(event)) {
-                            setGameSpeed();
-                        } else if (numberOfBlocksButton.mouseIsInside(event)) {
-                            setNumberOfBlocks();
-                        }
+                        } else if(soundsButton.mouseIsInside(event)) {
+                            if(soundsOn === false) {
+                                soundsOn = true;
+                                soundsButton.txt = "  Sounds : On  ";
+                            } else if (soundsOn === true) {
+                                soundsOn = false;
+                                soundsButton.txt = "  Sounds : Off  ";
+                            };
+                        } else if(musicButton.mouseIsInside(event)) {
+                            if(musicOn === false) {
+                                musicOn = true;
+                                musicButton.txt = "  Music : On  ";
+                            } else if(musicOn === true) {
+                                musicOn = false;
+                                musicButton.txt = "  Music : Off  ";
+                            }
+                        };
                     }  else if(scene === "levels") {
                         if(backButton.mouseIsInside(event)) {
                             scene = "menu";
@@ -707,6 +802,7 @@
                         for(i = 0; i < levelButtons.length; i++) {
                             if(levelButtons[i].mouseIsInside(event)) {
                                 changeLevel(Number(levelButtons[i].txt));
+                                startMainTheme();
                             };
                         };
                         
@@ -766,6 +862,7 @@
                 playButton.x = width/2; playButton.y = height/2 - 110;
                 howButton.x = width/2; howButton.y = height/2 + 90;
                 levelsButton.x = width/2; levelsButton.y = height/2 - 10;
+                gameControlsButton.x = width/2; gameControlsButton.y = height/2 + 190;
                 backButton.x = 60; backButton.y = height - 50;
                 retryButton.x = 60; retryButton.y = height - 125;
                 backButtonFromLoseScreen.x = 60; backButtonFromLoseScreen.y = height - 50;
