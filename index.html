@@ -41,6 +41,7 @@
         </audio>
         <audio id="ding" src="ding.mp3">
         </audio>
+        <audio id="levelOrRoundFinished" src="levelOrRoundFinished.mp3"></audio>
         
         <canvas id="canvas" width="550" height="550"></canvas>
         <script>
@@ -297,6 +298,13 @@
                 };
             };
             
+            var highScore = 0;
+            var tempHighScore = localStorage.getItem("highScore");
+            if(tempHighScore === null || tempHighScore === undefined) {
+                localStorage.setItem("highScore", "0");
+            } else {
+                highScore = Number(tempHighScore);
+            };
             var scene = "logo";
             var now = new Date().getTime();
             var score = 0;
@@ -367,6 +375,7 @@
                     };
                     ctx.drawImage(dodgencollecticon, width/2 - 150, titleTextX - titleTextX/2, 50, 50);
                     ctx.fillText("Dodge 'n Collect", width/2, titleTextX);
+                    ctx.fillText("High Score : " + highScore.toString(), width/2, titleTextX + 75);
                     ctx.save();
                     playButton.draw();
                     howButton.draw();
@@ -428,6 +437,9 @@
                             if(score === levels[level - 1].coinGoal) {
                                 scene = "lose";
                                 stopMainTheme();
+                                if(soundsOn === true) {
+                                    document.getElementById("levelOrRoundFinished").play();
+                                };
                             };
                         };
                         
@@ -435,6 +447,9 @@
                         if(redBlocks[i].x >= player.x-40 && redBlocks[i].x <= player.x+40 && redBlocks[i].y >= player.y && redBlocks[i].y <= player.y + 80) {
                             scene = "lose";
                             stopMainTheme();
+                            if(soundsOn === true) {
+                                document.getElementById("levelOrRoundFinished").play();
+                            };
                         };
                         
                         ctx.fillRect(redBlocks[i].x-40, redBlocks[i].y-40, 40, 40);
@@ -510,6 +525,10 @@
                         console.log(err.message);
                     };
                     ctx.save();
+                    if(score > highScore && level === 0) {
+                        highScore = score;
+                        localStorage.setItem("highScore", highScore.toString());
+                    };
                     var fontSize = canvas.width / 100 * 4;
                     if(fontSize >= 50) {fontSize = 50};
                     ctx.font = fontSize + "px sans-serif";
