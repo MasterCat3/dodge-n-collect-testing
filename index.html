@@ -4,20 +4,11 @@
 
 
 <!--
-    Released on: April 30th 2017
-    Last Updated: May 6th, 2020
-    Improvements made since release: (
-        Made logo shorter
-        Made the x position of the player reset itself after the "Retry" button is pressed
-        Made "how" text more clear
-        Added a gameSpeed variable to make it easier to adjust the game speed
-        Added a scores page
-        Fixed button collisions
-        Added variable to control how many red blocks there can be
-        Added new game controls section
-    )
+    Precursor Released on: April 30th 2017
+    Last Updated: March 18th 2022
+    Latest Update: Adding new skins.
     Reason I made this: I had just designed an HTML menu similar to this that I liked, And I felt like making a game, And a dodge game didn't seem too hard.
-    
+
     Tested in Firefox, Safari, and Chrome
 -->
 
@@ -28,25 +19,38 @@
         <link rel="apple-touch-icon-precomposed" href="apple-touch-favicon.png">
         <link rel="icon" href="favicon.ico">
         <title>Dodge 'n Collect</title>
-        
+
         <style>
             html, body {
                 overflow: hidden;
             }
         </style>
     </head>
-    
+
     <body>
         <audio loop id="mainTheme" src="mainTheme.mp3">
         </audio>
         <audio id="ding" src="ding.mp3">
         </audio>
         <audio id="levelOrRoundFinished" src="levelOrRoundFinished.mp3"></audio>
-        
+
         <canvas id="canvas" width="550" height="550"></canvas>
         <script>
+            // Settings for sound/music
             var soundsOn = false;
             var musicOn = false;
+
+            if(localStorage.getItem("soundsOn") === null || localStorage.getItem("soundsOn") === undefined) {
+                localStorage.setItem("soundsOn", "false");
+            } else if (localStorage.getItem("soundsOn") === "true") {
+                soundsOn = true;
+            }
+            if(localStorage.getItem("musicOn") === null || localStorage.getItem("musicOn") === undefined) {
+                localStorage.setItem("musicOn", "false");
+            } else if (localStorage.getItem("musicOn") === "true") {
+                musicOn = true;
+            };
+
             function startMainTheme() {
                 if(musicOn === true) {
                     document.getElementById("mainTheme").play();
@@ -59,7 +63,7 @@
             }
             // Setting Up Canvas with Javascript
             {
-                
+
                 var canvas = document.getElementById("canvas");
                 canvas.height = window.innerHeight;
                 canvas.width = window.innerWidth;
@@ -72,7 +76,7 @@
                     ctx.fillRect(0, 0, width, height);
                     ctx.fillStyle = fillStyle;
                 };
-                
+
                 CanvasRenderingContext2D.prototype.roundRect = function (x, y, w, h, r) {
                     if (w < 2 * r) r = w / 2;
                     if (h < 2 * r) r = h / 2;
@@ -85,19 +89,20 @@
                     this.closePath();
                     return this;
                 };
-                
+
                 var rangedRandom = function(low, high) {
                     return Math.random() * (high - low) + low;
                 };
-               
+
                 var circle = function(x, y, radius, fill) {
                     ctx.beginPath();
                     ctx.arc(x, y, radius, 0, Math.PI * 2);
                     if(fill) ctx.fill();
                     else ctx.stroke();
+                    ctx.closePath();
                 };
-                
-                
+
+
                 var color = function(r, g, b, a) {
                     if(a === undefined) {
                         return "rgb(" + r + "," + g + "," + b + ")";
@@ -112,22 +117,33 @@
                     this.xMoveRate = xMoveRate;
                     this.yMoveRate = yMoveRate;
                 };
-                
-                
-                // Key Game Variables
-                var initialNumberOfBlocks = Math.round(canvas.width/100 / 2);  // The inital number of blocks
 
-                var gameSpeed = 5; // Change this to make the game run faster or slower
+
+                // Key Game Variables
+                var initialNumberOfBlocks = Math.round((canvas.width + canvas.height / 2) / 250);  // The inital number of blocks
+
                 var numberOfBlocks = initialNumberOfBlocks; //This sets the maximum number of blocks that can be around at the same time (More is harder)
 
-                var darkMode = true; // Activates and deactivates dark mode
-                
-            
-            
-            }; 
-            
+                var darkMode = false; // Activates and deactivates dark mode
+                var numberOfStars = 12;
+
+
+
+            };
+
+            // Code to detect if the mouse is down or up
+            var mouseIsDown = false;
+
             // Set of useful functions
-            var Button = function(x, y, txt, color, txtcolor, buttonHeight, buttonWidth) {
+            var Button = function(x, y, txt, color, txtcolor, buttonHeight, buttonWidth, isSkinButton) {
+                // code to check if button is skin button due to previous faulty mouse-button collision detection
+                if(isSkinButton === true) {
+                    this.isSkinButton = true;
+                } else if(isSkinButton === false || isSkinButton === undefined) {
+                    this.isSkinButton = false;
+                };
+
+
                 this.x = x;
                 this.y = y;
                 this.txt = txt;
@@ -143,7 +159,7 @@
                 } else {
                     this.height = buttonHeight;
                 };
-                
+
                 this.draw = function() {
                     ctx.save();
                     ctx.textAlign = "center";
@@ -155,24 +171,29 @@
                     ctx.restore();
                 };
                 this.mouseIsInside = function(event) {
-                    if(event.clientX >= (this.x-(this.width/2)) && event.clientX <= (this.x-(this.width/2) + this.width) && event.clientY >= (this.y-this.height) && event.clientY <= this.y) {
+                    if(this.isSkinButton === false) {
+                        if(event.clientX >= (this.x-(this.width/2)) && event.clientX <= (this.x-(this.width/2) + this.width) && event.clientY >= (this.y-this.height) && event.clientY <= this.y) {
                         return true;
-                    }
+                    } else {
+                        return false;
+                    };
+                    } else if(this.isSkinButton === true) {
+                        if(event.clientX >= (this.x-(this.width)) && event.clientX <= (this.x-(this.width) + this.width) && event.clientY >= (this.y-this.height) && event.clientY <= this.y) {
+                        return true;
+                    };
+                    };
+
+
                     return false;
                 };
             };
-            
+
             var createLevelButton = function(number, x, y) {
                 return new Button(x, y, number, "blue", "orange", 35, 35);
             };
-            
-            
-            // Code to detect if the mouse is down or up
-            var mouseIsDown = false;
 
-            
-            
-            var playButton = new Button(width/2, height/2 - 110, "  Play  ", color(0, 0, 255), "orange");
+
+            var playButton = new Button(width/2, height/2 - 110, "  Play  ", "blue", "orange");
             var howButton = new Button(width/2, height/2 + 90, "   How  ", "blue", "orange");
             var levelsButton = new Button(width/2, height/2 - 10, "  Levels  ", "blue", "orange");
             var gameControlsButton = new Button(width/2, height/2 + 190 , " Game Controls ", "blue", "orange");
@@ -180,14 +201,28 @@
             var retryButton = new Button(60, height-125, "  Retry  ", "blue", "orange");
             var backButtonFromLoseScreen = new Button(60, height-50, "  Back  ", "blue", "orange");
             var nextButton = new Button(60, height - 200, "  Next  ", "blue", "orange");
-            var gameSpeedButton = new Button(width/2, height/2, "  Game Speed  ", "blue", "orange");
             var numberOfBlocksButton = new Button(width/2, height/2 + 100, "  Number Of Blocks  ", "blue", "orange");
             var soundsButton = new Button(width/2, height/2 - 100, "  Sounds : Off  ", "blue", "orange");
+            if(soundsOn === true) {
+                soundsButton.txt = "  Sounds : On  ";
+            }
             var musicButton = new Button(width/2, height/2, "  Music : Off  ", "blue", "orange");
-            
-            
-            
-            
+            if(musicOn === true) {
+                musicButton.txt = "  Music : On  ";
+            };
+            var skinsButtonsWidthHeight = height/6;
+            if(skinsButtonsWidthHeight > width/6) {
+              skinsButtonsWidthHeight = width/6;
+            };
+            var skinsButton = new Button(width/2, height/2 + 100, "  Skins  ", "blue", "orange");
+            var blueSkin = new Button(width/2, skinsButtonsWidthHeight + 20, "", "blue", "blue", skinsButtonsWidthHeight, skinsButtonsWidthHeight, true);
+            var greenSkin = new Button(width/2 - (width/4), skinsButtonsWidthHeight * 2.5 + 20, "", color(0, 255, 0), "green", skinsButtonsWidthHeight, skinsButtonsWidthHeight, true);
+            var purpleSkin = new Button(width/2, skinsButtonsWidthHeight * 2.5 + 20, "", color(111, 0, 255), "purple", skinsButtonsWidthHeight, skinsButtonsWidthHeight, true);
+            var orangeSkin = new Button(width/2 + (width/4), skinsButtonsWidthHeight * 2.5 + 20, "", color(184, 120, 0), "orange", skinsButtonsWidthHeight, skinsButtonsWidthHeight, true);
+            var pinkSkin = new Button(width/2 - (width/4), skinsButtonsWidthHeight * 3.75 + 40, "", color(255, 166, 201), "pink", skinsButtonsWidthHeight, skinsButtonsWidthHeight, true);
+            var whiteSkin = new Button(width/2, skinsButtonsWidthHeight * 3.75 + 40, "", color(255, 255, 255), "white", skinsButtonsWidthHeight, skinsButtonsWidthHeight, true);
+
+
             var Coin = function(x, y, r) {
                 this.x = x;
                 this.y = y;
@@ -199,7 +234,7 @@
                     ctx.restore();
                 };
             };
-            
+
             var coin = new Coin(rangedRandom(20, width - 20), rangedRandom(40, height - 20), 10);
             var moveCoin = function() {
                 score += 1;
@@ -209,8 +244,8 @@
                     document.getElementById("ding").play();
                 };
             };
-            
-            
+
+
             var redBlockXMoveRate = {
                     min: -5,
                     max: 5,
@@ -223,7 +258,12 @@
             for(var i = 0; i < numberOfBlocks; i++) {
                 redBlocks.push(new Vector(width/2, height/2, rangedRandom(redBlockXMoveRate.min, redBlockXMoveRate.max), rangedRandom(redBlockYMoveRate.min, redBlockYMoveRate.max)));
             };
-            
+
+            var stars = [];
+            for(var i = 0; i < numberOfStars; i++) {
+                stars.push(new Vector(rangedRandom(0, width), height, rangedRandom(redBlockXMoveRate.min, redBlockXMoveRate.max), rangedRandom(redBlockYMoveRate.min, redBlockYMoveRate.max)));
+            };
+
             var levelButtons = [
                 createLevelButton("1", width/2 - 70, height/2 - 70),
                 createLevelButton("2", width/2, height/2 - 70),
@@ -235,15 +275,15 @@
                 createLevelButton("8", width/2, height/2 + 70),
                 createLevelButton("9", width/2 + 70, height/2 + 70)
             ];
-            
+
             var level = 0;
-            
+
             var MakeLevel = function(levelNum, maxBlockSpeed, nBlocks, coinGoal) {
                 this.maxBlockSpeed = maxBlockSpeed;
                 this.nBlocks = nBlocks;
                 this.coinGoal = coinGoal;
             };
-            
+
             var levels = [
                 new MakeLevel(1, 0.5, 0.5, 5),
                 new MakeLevel(2, 1, 1, 15),
@@ -255,7 +295,7 @@
                 new MakeLevel(8, 3, 1, 50),
                 new MakeLevel(9, 1, 3, 50),
             ];
-            
+
             var changeLevel = function(newLevel) {
                 seconds = 0;
                 level = newLevel;
@@ -267,18 +307,18 @@
                 numberOfBlocks = Math.round(initialNumberOfBlocks * levels[level - 1].nBlocks);
                 player.x = width/2;
                 player.y = height - 40;
-                
+
                 redBlocks = [];
                 for(var i = 0; i < numberOfBlocks; i++) {
                     redBlocks.push(new Vector(width/2, height/2, rangedRandom(redBlockXMoveRate.min, redBlockXMoveRate.max), rangedRandom(redBlockYMoveRate.min, redBlockYMoveRate.max)));
                 };
-                
+
                 score = 0;
                 scene = "play";
             };
-            
-            
-            
+
+
+
             var levelsCompleted = [];
             var tempLevelsCompleted = localStorage.getItem("levelsCompleted");
             if(tempLevelsCompleted === null || tempLevelsCompleted === undefined) {
@@ -286,7 +326,7 @@
                     levelsCompleted.push(false);
                 };
                 localStorage.setItem("levelsCompleted", levelsCompleted.toString());
-                
+
             } else {
                 levelsCompleted = tempLevelsCompleted.split(",");
                 for(i = 0; i < levelsCompleted.length; i++) {
@@ -297,7 +337,7 @@
                     };
                 };
             };
-            
+
             var highScore = 0;
             var tempHighScore = localStorage.getItem("highScore");
             if(tempHighScore === null || tempHighScore === undefined) {
@@ -305,44 +345,62 @@
             } else {
                 highScore = Number(tempHighScore);
             };
-            var scene = "logo";
             var now = new Date().getTime();
             var score = 0;
             var keysPressed = [];
+            var skin = "blue";
+
+            var mercobaCharacter = new Image();
+            mercobaCharacter.src = "MercobaCharacter.png";
+
             var player = {
                 x: width/2,
                 y: height - 40,
                 draw: function() {
                     ctx.save();
-                    ctx.fillStyle = "blue";
-                    ctx.fillRect(this.x-40, this.y, 40, 40);
+                    if (skin === "blue"){
+                        ctx.fillStyle = blueSkin.color;
+                    } else if (skin === "green"){
+                        ctx.fillStyle = greenSkin.color;
+                    } else if (skin === "purple") {
+                        ctx.fillStyle = purpleSkin.color;
+                    } else if(skin === "orange") {
+                        ctx.fillStyle = orangeSkin.color;
+                    } else if(skin === "pink") {
+                      ctx.fillStyle = pinkSkin.color;
+                    } else if(skin === "white") {
+                      ctx.fillStyle = whiteSkin.color;
+                    }
+                    if (skin === "mercoba") {
+                        ctx.drawImage(mercobaCharacter, this.x-40, this.y, 40, 40);
+                    } else {
+                        ctx.fillRect(this.x-40, this.y, 40, 40);
+                    };
+
                     ctx.restore();
                 },
             };
-            
-            
-            
-            
-        
-            
-            
+
             var dodgencollecticon = new Image();
             dodgencollecticon.src = "dodgencollecticon.png"
-            
+
             var backgroundImage = new Image();
             backgroundImage.src = "StarsExperimentWithPlanet.png";
-            
+
             var backgroundImageWithoutPlanet = new Image();
             backgroundImageWithoutPlanet.src = "StarsExperiment.png";
-            
+
             var checkmarkIcon = new Image();
             checkmarkIcon.src = "Checkmarkicon.png";
             // Scenes
             var logoProgress = 0;
             var seconds = 0;
+            var pause = false;
+            var scene = "logo";
+
             var scenes = {
                 logo: function() {
-                    
+
                     ctx.save();
                     setBackgroundColor(0, 0, 0);
                     ctx.font = "40px serif";
@@ -384,10 +442,12 @@
                     ctx.restore();
                 },
                 play: function() {
-                    if (new Date().getTime() - now >= 1000) {
-                        seconds += 1;
-                        now = new Date().getTime();
-                    }
+                    if(pause === false) {
+                        if (new Date().getTime() - now >= 1000) {
+                            seconds += 1;
+                            now = new Date().getTime();
+                        };
+                    };
                     ctx.save();
                     if(darkMode === true) {
                         setBackgroundColor(color(0, 0, 0));
@@ -399,32 +459,22 @@
                     } catch(err) {
                         console.log(err.message);
                     };
-                    
+
                     coin.draw();
-                    ctx.textAlign = "center";
-                    ctx.fillStyle = "white";
-                    var textSize = canvas.width / 100 * 4;
-                    if(textSize > 30) {textSize = 30};
-                    ctx.font = textSize + "px cursive";
-                    if(level === 0) {
-                        ctx.fillText("Score: " + Math.round(score) + "     Seconds: " + seconds, width/2, 1.5 * textSize);
-                    } else {
-                        ctx.fillText("Score: " + Math.round(score) + " / " + levels[level - 1].coinGoal + "     Seconds: " + seconds, width/2, 1.5 * textSize);
-                    }
-                    ctx.fillStyle = "black";
-                    ctx.save();
-                    ctx.font = "30px sans-serif";
+
                     for(var i = 0; i < redBlocks.length; i++) {
                         ctx.save();
                         ctx.fillStyle = "red";
-                        
-                        redBlocks[i].x += redBlocks[i].xMoveRate;
-                        redBlocks[i].y += redBlocks[i].yMoveRate;
-                        
+
+                        if(pause === false) {
+                            redBlocks[i].x += redBlocks[i].xMoveRate;
+                            redBlocks[i].y += redBlocks[i].yMoveRate;
+                        };
+
                         // Handling red block collisions with the wall and adjusting the x/y move rate
                         if(redBlocks[i].y >= height) {
                             redBlocks[i].yMoveRate = rangedRandom(redBlockYMoveRate.min, 0);
-                        } else if(redBlocks[i].y <= 40) {
+                        } else if(redBlocks[i].y <= 80) {
                             redBlocks[i].yMoveRate = rangedRandom(0, redBlockYMoveRate.max);
                         };
                         if(redBlocks[i].x >= width) {
@@ -432,7 +482,8 @@
                         } else if(redBlocks[i].x <= 40) {
                             redBlocks[i].xMoveRate = rangedRandom(0, redBlockXMoveRate.max);
                         };
-                        
+
+
                         if(level != 0) {
                             if(score === levels[level - 1].coinGoal) {
                                 scene = "lose";
@@ -442,8 +493,8 @@
                                 };
                             };
                         };
-                        
-        
+
+
                         if(redBlocks[i].x >= player.x-40 && redBlocks[i].x <= player.x+40 && redBlocks[i].y >= player.y && redBlocks[i].y <= player.y + 80) {
                             scene = "lose";
                             stopMainTheme();
@@ -451,45 +502,88 @@
                                 document.getElementById("levelOrRoundFinished").play();
                             };
                         };
-                        
+
                         ctx.fillRect(redBlocks[i].x-40, redBlocks[i].y-40, 40, 40);
-                        
+
                         // Handling player and coin collisions
                         var distX = Math.abs(coin.x - player.x-(40/2-40));
                         var distY = Math.abs(coin.y - player.y-40/2);
                         var dx=distX-40/2;
                         var dy=distY-(40/2);
-                        
+
                         if (distX > (40/2 + coin.r)) {}
                         if (distY > ((40/2-40) + coin.r)) {}
 
                         if (distX <= (40/2) && distY <= (40/2) || dx*dx+dy*dy<=(coin.r*coin.r)) { moveCoin();}
                         ctx.restore();
                     };
-                    
-                    // Handling arrow keys and block movement
-                    if(keysPressed[37] || keysPressed[65]) {
-                        if(player.x > 40) {
-                            player.x -= 7;
+
+                    for(var i = 0; i < stars.length; i++) {
+                        // Handling stars collisions with the wall and adjusting the x/y move rate
+                        stars[i].x += stars[i].xMoveRate;
+                        stars[i].y += stars[i].yMoveRate;
+
+                        if(stars[i].x >= width) {
+                            stars[i].x = rangedRandom(0, width)
+                            stars[i].xMoveRate = rangedRandom(redBlockXMoveRate.min, 0);
+                        } else if(stars[i].x <= 40) {
+                            stars[i].x = rangedRandom(0, width)
+                            stars[i].xMoveRate = rangedRandom(0, redBlockXMoveRate.max);
+                        };
+
+                        if(stars[i].y >= height) {
+                            stars[i].y = rangedRandom(0, height);
+                            stars[i].yMoveRate = rangedRandom(redBlockYMoveRate.min, 0);
+                        } else if(stars[i].y <= 40) {
+                            stars[i].y = rangedRandom(0, height);
+                            stars[i].yMoveRate = rangedRandom(0, redBlockYMoveRate.max);
+                        };
+                        ctx.fillStyle = "white";
+                        circle(stars[i].x-40, stars[i].y-40, 3, true);
+
+                    };
+
+                    if(pause === false) {
+                        if(keysPressed[37] || keysPressed[65]) {
+                            if(player.x > 40) {
+                                player.x -= 7;
+                            };
+                        };
+                        if(keysPressed[39] || keysPressed[68]) {
+                            if(player.x < width - 13) {
+                                player.x += 7;
+                            };
+                        };
+                        if(keysPressed[38] || keysPressed[87]) {
+                            if(player.y > 40) {
+                                player.y -= 7;
+                            };
+                        };
+                        if(keysPressed[40] || keysPressed[83]) {
+                            if(player.y < height - 47) {
+                                player.y += 7;
+                            };
                         };
                     };
-                    if(keysPressed[39] || keysPressed[68]) {
-                        if(player.x < width) {
-                            player.x += 7;
-                        }
-                    };
-                    if(keysPressed[38] || keysPressed[87]) {
-                        if(player.y > 0) {
-                            player.y -= 7;
-                        };
-                    };
-                    if(keysPressed[40] || keysPressed[83]) {
-                        if(player.y < height - 40) {
-                            player.y += 7;
-                        };
-                        
-                    };
-                    
+                    ctx.fillStyle = color(130,130,180, 0.5);
+                    ctx.fillRect(0, 0, width, 40);
+                    ctx.textAlign = "center";
+                    ctx.fillStyle = "white";
+                    var textSize = canvas.width / 100 * 4;
+                    if(textSize > 30) {textSize = 30};
+                    ctx.font = textSize + "px cursive";
+                    var scoreSecondsTxt = "";
+                    if(level === 0) {
+                      scoreSecondsTxt = "Score: " + Math.round(score) + "     Seconds: " + seconds;
+                        ctx.fillText(scoreSecondsTxt, width/2, textSize);
+                    } else {
+                        scoreSecondsTxt = "Score: " + Math.round(score) + " / " + levels[level - 1].coinGoal + "     Seconds: " + seconds;
+                        ctx.fillText(scoreSecondsTxt, width/2, textSize);
+                    }
+                    ctx.drawImage(dodgencollecticon, width/2 - (textSize * (scoreSecondsTxt.length / 2)), 0, 40, 40);
+
+                    ctx.save();
+
                     player.draw();
                     ctx.restore();
                 },
@@ -501,11 +595,11 @@
                     } catch(err) {
                         console.log(err.message);
                     };
-                    
+
                     ctx.textAlign = "center";
                     var fontSize = canvas.width / 100 * 4;
                     if(fontSize >= 50) {fontSize = 50};
-                    ctx.font = fontSize + "px sans-serif";
+                    ctx.font = fontSize + "px cursive";
                     ctx.fillStyle = "white";
                     ctx.fillText("You are the blue block. Move", width/2, height/2 - (fontSize * 2.5));
                     ctx.fillText("around with the arrow keys", width/2, height/2 - (fontSize * 1.25));
@@ -531,7 +625,7 @@
                     };
                     var fontSize = canvas.width / 100 * 4;
                     if(fontSize >= 50) {fontSize = 50};
-                    ctx.font = fontSize + "px sans-serif";
+                    ctx.font = fontSize + "px cursive";
                     ctx.fillStyle = "white";
                     ctx.save();
                     ctx.translate(0, -150);
@@ -541,7 +635,7 @@
                     } else {
                         ctx.fillText("You got " + score + " points in " + seconds + " seconds!", width/2, height/2 + (fontSize * 1.25));
                     };
-                    
+
                     if(level === 0) {
                         ctx.fillText("Click the retry button to play again.", width/2, height/2+fontSize*2.5);
                     } else {
@@ -556,7 +650,7 @@
                             ctx.fillText("Click the retry button to play again.", width/2, height/2+fontSize*3.75);
                         };
                     };
-                    
+
                     ctx.restore();
                     retryButton.draw();
                     backButtonFromLoseScreen.draw();
@@ -590,8 +684,9 @@
                     backButton.draw();
                     soundsButton.draw();
                     musicButton.draw();
+                    skinsButton.draw();
                     ctx.restore();
-                    
+
                 },
                 levels: function() {
                     setBackgroundColor(color(0, 0, 0));
@@ -600,11 +695,11 @@
                     } catch(err) {
                         console.log(err.message);
                     };
-                    
+
                     for(i = 0; i < levelButtons.length; i++) {
                         levelButtons[i].draw();
                     };
-                    
+
                     for(i = 0; i < levelsCompleted.length; i++) {
                         if(levelsCompleted[i] === true) {
                             ctx.drawImage(checkmarkIcon, levelButtons[i].x - 10, levelButtons[i].y - 5, 20, 20);
@@ -612,8 +707,66 @@
                     }
                     backButton.draw();
                 },
+                skins: function() {
+                    setBackgroundColor(color(0, 255, 0));
+                    try {
+                       ctx.drawImage(backgroundImageWithoutPlanet, 0, 0, width, height);
+                    } catch(err) {
+                        console.log(err.message);
+                    };
+
+                    backButton.draw();
+                    blueSkin.draw();
+                    greenSkin.draw();
+                    purpleSkin.draw();
+                    orangeSkin.draw();
+                    pinkSkin.draw();
+                    whiteSkin.draw();
+                    mercobaCharacterX = width/2 + (width/4) - skinsButtonsWidthHeight;
+                    mercobaCharacterY = skinsButtonsWidthHeight * 3.75 + 40 - skinsButtonsWidthHeight;
+                    ctx.drawImage(mercobaCharacter, width/2 + (width/4) - skinsButtonsWidthHeight, skinsButtonsWidthHeight * 3.75 + 40 - skinsButtonsWidthHeight, skinsButtonsWidthHeight, skinsButtonsWidthHeight);
+
+                    if(skin === "blue") {
+                        ctx.strokeStyle = "yellow";
+                        ctx.lineWidth = height/50;
+                        ctx.roundRect(blueSkin.x-blueSkin.width, blueSkin.y-blueSkin.height, blueSkin.width, blueSkin.height, 5).stroke();
+                        ctx.closePath();
+                    } else if (skin === "green") {
+                        ctx.strokeStyle = "yellow";
+                        ctx.lineWidth = height/50;
+                        ctx.roundRect(greenSkin.x-greenSkin.width, greenSkin.y-greenSkin.height, greenSkin.width, greenSkin.height, 5).stroke();
+                        ctx.closePath();
+                    } else if (skin === "purple") {
+                        ctx.strokeStyle = "yellow";
+                        ctx.lineWidth = height/50;
+                        ctx.roundRect(purpleSkin.x-purpleSkin.width, purpleSkin.y-purpleSkin.height, purpleSkin.width, purpleSkin.height, 5).stroke();
+                        ctx.closePath();
+                    } else if (skin === "orange") {
+                        ctx.strokeStyle = "yellow";
+                        ctx.lineWidth = height/50;
+                        ctx.roundRect(orangeSkin.x-orangeSkin.width, orangeSkin.y-orangeSkin.height, orangeSkin.width, orangeSkin.height, 5).stroke();
+                        ctx.closePath();
+                    } else if (skin === "pink") {
+                      ctx.strokeStyle = "yellow";
+                      ctx.lineWidth = height/50;
+                      ctx.roundRect(pinkSkin.x-pinkSkin.width, pinkSkin.y-pinkSkin.height, pinkSkin.width, pinkSkin.height, 5).stroke();
+                      ctx.closePath();
+                    } else if (skin === "white") {
+                      ctx.strokeStyle = "yellow";
+                      ctx.lineWidth = height/50;
+                      ctx.roundRect(whiteSkin.x-whiteSkin.width, whiteSkin.y-whiteSkin.height, whiteSkin.width, whiteSkin.height, 5).stroke();
+                      ctx.closePath();
+                    } else if (skin === "mercoba") {
+                      console.log("Hey there")
+                      ctx.strokeStyle = "yellow";
+                      ctx.lineWidth = height/50;
+                      ctx.roundRect(mercobaCharacterX, mercobaCharacterY, skinsButtonsWidthHeight, skinsButtonsWidthHeight, 4).stroke();
+                      ctx.closePath();
+                    }
+
+                }
             };
-            
+
             // Code to be run 60 times per seconds(Or as many FPS as the device allows)
             var draw = function() {
                 scenes[scene]();
@@ -621,22 +774,30 @@
             };
             requestAnimationFrame(draw);
 
-            
+
             //Handling Mouse controls
             canvas.addEventListener("mousedown", function(event) {
                 mouseIsDown = true;
-                if(scene === "play") {
+                if(scene === "play" && pause === false) {
                     player.x = event.clientX;
-                    player.y = event.clientY;
+                    if(event.clientY >= 60) {
+                        player.y = event.clientY - 20;
+                    } else {
+                        player.y = 40;
+                    }
                 };
             });
             canvas.addEventListener("mouseup", function() {
                 mouseIsDown = false;
             });
             canvas.addEventListener("mousemove", function(event) {
-                if(mouseIsDown && scene === "play") {
+                if(mouseIsDown && scene === "play" && pause === false) {
                     player.x = event.clientX;
-                    player.y = event.clientY - 20;
+                    if(event.clientY >= 60) {
+                      player.y = event.clientY - 20;
+                    } else {
+                      player.y = 40;
+                    }
                 };
                 if(scene === "menu") {
                     if(playButton.mouseIsInside(event)) {
@@ -653,14 +814,14 @@
                         howButton.color = color(0, 120, 255);
                     } else if(!howButton.mouseIsInside(event)) {
                         howButton.color = color(0, 0, 255);
-                    }; 
+                    };
                     if(gameControlsButton.mouseIsInside(event)) {
                         gameControlsButton.color = color(0, 120, 255);
                     } else if(!gameControlsButton.mouseIsInside(event)) {
                         gameControlsButton.color = color(0, 0, 255);
                     };
                 };
-                if(scene === "gameControls" || scene === "how" || scene === "levels") {
+                if(scene === "gameControls" || scene === "how" || scene === "levels" || scene === "skins") {
                     if(backButton.mouseIsInside(event)) {
                         backButton.color = color(0, 120, 255);
                     } else if(!backButton.mouseIsInside(event)) {
@@ -669,7 +830,7 @@
                 };
                 if(scene === "lose") {
                     if(retryButton.mouseIsInside(event)) {
-                        retryButton.color = color(0, 120, 255)
+                        retryButton.color = color(0, 120, 255);
                     } else if(!retryButton.mouseIsInside(event)) {
                         retryButton.color = color(0, 0, 255);
                     };
@@ -677,6 +838,11 @@
                         backButtonFromLoseScreen.color = color(0, 120, 255);
                     } else if(!backButtonFromLoseScreen.mouseIsInside(event)) {
                         backButtonFromLoseScreen.color = color(0, 0, 255);
+                    };
+                    if(nextButton.mouseIsInside(event)) {
+                        nextButton.color = color(0, 120, 255);
+                    } else if (!nextButton.mouseIsInside(event)) {
+                        nextButton.color = color(0, 0, 255);
                     };
                 };
                 if(scene === "levels") {
@@ -698,42 +864,73 @@
                         musicButton.color = color(0, 120, 255);
                     } else if(!musicButton.mouseIsInside(event)) {
                         musicButton.color = color(0, 0, 255);
+                    }
+                    if (skinsButton.mouseIsInside(event)) {
+                        skinsButton.color = color(0, 120, 255);
+                    } else if(!skinsButton.mouseIsInside(event)) {
+                        skinsButton.color = color(0, 0, 255);
                     };
                 };
+                if (scene === "skins") {
+                    if(blueSkin.mouseIsInside(event)) {
+                        blueSkin.color = color(0, 120, 255);
+                    } else if(!blueSkin.mouseIsInside(event)) {
+                        blueSkin.color = color(0, 0, 255);
+                    };
+                    if(greenSkin.mouseIsInside(event)) {
+                        greenSkin.color = color(120, 255, 150);
+                    } else if(!greenSkin.mouseIsInside(event)) {
+                        greenSkin.color = color(0, 255, 0);
+                    };
+                    if(purpleSkin.mouseIsInside(event)) {
+                        purpleSkin.color = color(135, 0, 255);
+                    } else if(!purpleSkin.mouseIsInside(event)) {
+                        purpleSkin.color = color(111, 0, 255);
+                    };
+                    if(orangeSkin.mouseIsInside(event)) {
+                      orangeSkin.color = color(225, 147, 5);
+                    } else if(!orangeSkin.mouseIsInside(event)) {
+                      orangeSkin.color = color(184, 120, 0);
+                    };
+                    if(pinkSkin.mouseIsInside(event)) {
+                      pinkSkin.color = color(255, 166, 201);
+                    } else if(!pinkSkin.mouseIsInside(event)) {
+                      pinkSkin.color = color(255, 166, 255);
+                    };
+                    if(whiteSkin.mouseIsInside(event)) {
+                      whiteSkin.color = color(233, 233, 233);
+                    } else if(!whiteSkin.mouseIsInside(event)) {
+                      whiteSkin.color = color(255, 255, 255);
+                    }
+
+                };
             });
-            
+
+
             var touches = null;
-            //Handling Touch Events(experimental)
+            //Handling Touch Events
             canvas.addEventListener("touchstart", function(event) {
                 touches = event.changedTouches;
                 if (scene === "play") {
-                    if(player.x > 20 && player.x < width && player.y > 0 && player.y < height - 20) {
-                        player.x = touches[0].clientX;
-                        player.y = touches[0].clientY - 20;
-                    } else if(touches[0].clientX >= 20 && touches[0].clientX < width && touches[0].clientY > 0 && touches[0].clientY < height - 20) {
+                    if(touches[0].clientX >= 20 && touches[0].clientX < width && touches[0].clientY > 40 && touches[0].clientY < height - 20 && pause === false) {
                         player.x = touches[0].clientX;
                         player.y = touches[0].clientY - 20;
                     };
-                    
                     event.preventDefault();
                 };
             });
             canvas.addEventListener("touchmove", function(event) {
                 touches = event.changedTouches;
                 if (scene === "play") {
-                    
-                    if(player.x > 20 && player.x < width && player.y > 0 && player.y < height - 20) {
-                        player.x = touches[0].clientX;
-                        player.y = touches[0].clientY - 20;
-                    } else if(touches[0].clientX >= 20 && touches[0].clientX < width && touches[0].clientY > 0 && touches[0].clientY < height - 20) {
+                    if(touches[0].clientX >= 20 && touches[0].clientX < width && touches[0].clientY > 40 && touches[0].clientY < height - 20 && pause === false) {
                         player.x = touches[0].clientX;
                         player.y = touches[0].clientY - 20;
                     };
                     event.preventDefault();
                 };
             });
-            
-            
+
+
             // Handing button collisions
             canvas.addEventListener("click", function(event) {
                     if(scene === "menu") {
@@ -745,17 +942,22 @@
                             seconds = 0;
                             score = 0;
                             numberOfBlocks = initialNumberOfBlocks;
-                            
+                            playButton.color = color(0, 0, 255);
+
                         } else if(howButton.mouseIsInside(event)) {
                             scene = "how";
+                            howButton.color = color(0, 0, 255);
                         } else if(gameControlsButton.mouseIsInside(event)) {
                             scene = "gameControls";
+                            gameControlsButton.color = color(0, 0, 255);
                         } else if(levelsButton.mouseIsInside(event)) {
                             scene = "levels";
+                            levelsButton.color = color(0, 0, 255);
                         };
                     } else if(scene === "how") {
                         if(backButton.mouseIsInside(event)) {
                             scene = "menu";
+                            backButton.color = color(0, 0, 255);
                         };
                     } else if(scene === "lose") {
                         if(retryButton.mouseIsInside(event)) {
@@ -769,92 +971,146 @@
                                 redBlocks[i].xMoveRate = rangedRandom(redBlockXMoveRate.min, redBlockXMoveRate.max);
                                 redBlocks[i].yMoveRate = rangedRandom(redBlockYMoveRate.min, redBlockYMoveRate.max);
                             };
-                            scene = "play";
                             startMainTheme();
+                            scene = "play";
+                            retryButton.color = color(0, 0, 255);
                         } else if(backButtonFromLoseScreen.mouseIsInside(event)) {
                             score = 0;
                             seconds = 0;
                             if(level != 0) {
-                                gameSpeed = 5;
                                 level = 0;
                             };
                             numberOfBlocks = initialNumberOfBlocks;
-                            
+
                             player.x = width/2;
                             player.y = height-40;
                             redBlocks = [];
-                            
+
                             redBlockXMoveRate.min = -5; redBlockXMoveRate.max = 5;
                             redBlockYMoveRate.min = -5; redBlockYMoveRate.max = 5;
                             for(var i = 0; i < numberOfBlocks; i++) {
                                 redBlocks.push(new Vector(width/2, height/2, rangedRandom(redBlockXMoveRate.min, redBlockXMoveRate.max), rangedRandom(redBlockYMoveRate.min, redBlockYMoveRate.max)));
                             };
-                    
+                            backButtonFromLoseScreen.color = color(0, 0, 255);
                             scene = "menu";
                         } else if(nextButton.mouseIsInside(event) && level != 0 && level < 9 && score >= levels[level - 1].coinGoal) {
+                            nextButton.color = color(0, 0, 255)
+                            startMainTheme();
                             changeLevel(level + 1);
                         }
                     } else if (scene === "gameControls") {
                         if(backButton.mouseIsInside(event)) {
                             scene = "menu";
+                            backButton.color = color(0, 0, 255);
+                        } else if (skinsButton.mouseIsInside(event)) {
+                            scene = "skins";
+                            skinsButton.color = color(0, 0, 255);
                         } else if(soundsButton.mouseIsInside(event)) {
                             if(soundsOn === false) {
                                 soundsOn = true;
+                                localStorage.setItem("soundsOn", "true");
                                 soundsButton.txt = "  Sounds : On  ";
                             } else if (soundsOn === true) {
                                 soundsOn = false;
+                                localStorage.setItem("soundsOn", "false");
                                 soundsButton.txt = "  Sounds : Off  ";
                             };
+                            soundsButton.color = color(0, 0, 255);
                         } else if(musicButton.mouseIsInside(event)) {
                             if(musicOn === false) {
                                 musicOn = true;
+                                localStorage.setItem("musicOn", "true");
                                 musicButton.txt = "  Music : On  ";
                             } else if(musicOn === true) {
                                 musicOn = false;
+                                localStorage.setItem("musicOn", "false");
                                 musicButton.txt = "  Music : Off  ";
-                            }
+                            };
+                            musicButton.color = color(0, 0, 255);
                         };
                     }  else if(scene === "levels") {
                         if(backButton.mouseIsInside(event)) {
                             scene = "menu";
+                            backButton.color = color(0, 0, 255);
                         };
                         for(i = 0; i < levelButtons.length; i++) {
                             if(levelButtons[i].mouseIsInside(event)) {
                                 changeLevel(Number(levelButtons[i].txt));
+                                levelButtons[i].color = color(0, 0, 255);
                                 startMainTheme();
                             };
                         };
-                        
+
+                    } else if(scene === "skins") {
+                        if (backButton.mouseIsInside(event)) {
+                            scene = "menu";
+                            backButton.color = color(0, 0, 255)
+                        } else if (blueSkin.mouseIsInside(event)) {
+                            skin = "blue";
+                            blueSkin.color = color(0, 0, 255)
+                        } else if (greenSkin.mouseIsInside(event)) {
+                            greenSkin.color = color(0, 255, 0);
+                            skin = "green";
+                        } else if (purpleSkin.mouseIsInside(event)) {
+                            skin = "purple";
+                            purpleSkin.color = color(111, 0, 255);
+                        } else if (orangeSkin.mouseIsInside(event)) {
+                            skin = "orange";
+                            orangeSkin.color = color(180, 120, 0);
+                        } else if (pinkSkin.mouseIsInside(event)) {
+                            skin = "pink";
+                            pinkSkin.color = color(255, 166, 201);
+                        } else if(whiteSkin.mouseIsInside(event)) {
+                          skin = "white";
+                          whiteSkin.color = color(255, 255, 255)
+                        } else if(event.clientX >= mercobaCharacterX && event.clientY >= mercobaCharacterY && event.clientX <= mercobaCharacterX + skinsButtonsWidthHeight && event.clientY <= mercobaCharacterY + skinsButtonsWidthHeight) {
+                          skin = "mercoba";
+                        }
                     };
             });
-            
-            
-            
+
+
+
             // Handling key presses
             document.addEventListener("keydown", function(event) {
                 keysPressed[event.keyCode] = true;
-                if (event.keyCode === 39 || event.keyCode === 37 || event.keyCode === 38 || event.keyCode === 40 || event.keyCode === 82 || event.keyCode === 83 || event.keyCode === 87 || event.keyCode === 65 || event.keyCode === 68) {
+                if (event.keyCode === 39 || event.keyCode === 37 || event.keyCode === 38 || event.keyCode === 40 || event.keyCode === 82 || event.keyCode === 83 || event.keyCode === 87 || event.keyCode === 65 || event.keyCode === 68 || event.keyCode === 32 || event.key === " ") {
                     event.preventDefault();
                 };
             });
             document.addEventListener("keyup", function(event) {
                 keysPressed[event.keyCode] = false;
+                if(pause === false && scene === "play") {
+                    if(event.key === " " || event.keyCode === 32) {
+                        pause = true;
+                    };
+                } else if(pause === true) {
+                    if(event.key === " " || event.keyCode === 32) {
+                        pause = false;
+                    };
+                };
             });
-            
+
             // Resizing appropriately for resizing windows
             window.addEventListener("resize", function(event) {
+                canvas.width = window.innerWidth;
+                canvas.height = window.innerHeight;
+                width = canvas.width;
+                height = canvas.height;
+
                 initialNumberOfBlocks = Math.round(canvas.width/100 / 2);
                 if(level === 0) {
                     numberOfBlocks = initialNumberOfBlocks;
                 } else {
                     numberOfBlocks = initialNumberOfBlocks * levels[level - 1].nBlocks;
                 };
-                
+
                 redBlocks = [];
                 for(var i = 0; i < numberOfBlocks; i++) {
                     redBlocks.push(new Vector(width/2, height/2, rangedRandom(redBlockXMoveRate.min, redBlockXMoveRate.max), rangedRandom(redBlockYMoveRate.min, redBlockYMoveRate.max)));
                 };
-                
+
+
                 for(i = 0; i < levelButtons.length; i++) {
                     // Adjusting the x position of the buttons on window resize
                     if(i === 0 || i === 3 || i === 6) { // for level buttons 1, 4, and 7
@@ -873,11 +1129,8 @@
                         levelButtons[i].y = height / 2 + 70;
                     };
                 };
-                
-                canvas.width = window.innerWidth;
-                canvas.height = window.innerHeight;
-                width = canvas.width;
-                height = canvas.height;
+
+
                 playButton.x = width/2; playButton.y = height/2 - 110;
                 howButton.x = width/2; howButton.y = height/2 + 90;
                 levelsButton.x = width/2; levelsButton.y = height/2 - 10;
@@ -886,6 +1139,18 @@
                 retryButton.x = 60; retryButton.y = height - 125;
                 backButtonFromLoseScreen.x = 60; backButtonFromLoseScreen.y = height - 50;
                 nextButton.x = 60; nextButton.y = height - 200;
+
+                soundsButton.x = width/2; soundsButton.y = height/2 - 100;
+                musicButton.x = width/2; musicButton.y = height/2;
+                skinsButton.x = width/2; skinsButton.y = height/2 + 100;
+                blueSkin.x = width/2 - (width/5); blueSkin.y = height/2;
+                blueSkin.width = height/5; blueSkin.height = height/5;
+                greenSkin.x = width/2; greenSkin.y = height/2;
+                greenSkin.width = height/5; greenSkin.height = height/5;
+                purpleSkin.x = width/2 + (width/5); purpleSkin.y = height/2;
+                purpleSkin.width = height/5; purpleSkin.height = height/5;
+
+
                 coin.x = rangedRandom(20, width - 20);
                 coin.y = rangedRandom(20, height - 20);
                 player.x = width/2;
@@ -894,4 +1159,3 @@
         </script>
     </body>
 </html>
-
